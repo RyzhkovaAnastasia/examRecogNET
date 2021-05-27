@@ -35,6 +35,7 @@ namespace ExamRecog
                     solver.Maximin();
                     break;
                 case 6:
+                    solver.KIntergroupAverage();
                     break;
                 case 7:
                     break;

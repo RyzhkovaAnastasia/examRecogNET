@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Word = Microsoft.Office.Interop.Word;
 
-
 namespace ExamRecog
 {
     class Solver
@@ -74,18 +73,12 @@ namespace ExamRecog
             SaveDoc();
         }
 
-        public void CalculateDistances()
+        public double CalculateDistances(Point p1, Point p2)
         {
-            for (int i = 0; i < points.Count; i++)
-            {
-                for (int j = 0; j < points.Count; j++)
-                {
-                    distances[i].Add(Math.Sqrt(Math.Pow(points[i].X - points[j].X, 2) + Math.Pow(points[i].Y - points[j].Y, 2)));
-                }
-            }
+            return Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
         }
 
-        private void ClassesAllocation(out int ind1, out int ind2, List<int> clusterCentres)
+        private void ClassesAllocation(out int ind1, out int ind2, List<int> clusterCenters)
         {
             double min = 100.0, maximin = 0.0;
             int minInd1 = -1, minInd2 = -1;
@@ -93,30 +86,16 @@ namespace ExamRecog
             ind2 = 0;
             for (int i = 0; i < points.Count; i++)
             {
-                for (int j = 0; j < clusterCentres.Count - 1; j++)
+                for (int j = 0; j < clusterCenters.Count; j++)
                 {
-                    if (!clusterCentres.Contains(i))
+                    if (!clusterCenters.Contains(i))
                     {
-                        if (distances[i][clusterCentres[j]] >= distances[i][clusterCentres[j + 1]])
+                        if (distances[i][clusterCenters[j]] < min)
                         {
-                            if (distances[i][clusterCentres[j + 1]] < min)
-                            {
-                                points[i].PointClass = points[clusterCentres[j + 1]].PointClass;
-                                min = distances[i][clusterCentres[j + 1]];
-                                minInd1 = i;
-                                minInd2 = clusterCentres[j + 1];
-                            }
-                        }
-                        else
-                        {
-
-                            if (distances[i][clusterCentres[j]] < min)
-                            {
-                                points[i].PointClass = points[clusterCentres[j]].PointClass;
-                                min = distances[i][clusterCentres[j]];
-                                minInd1 = i;
-                                minInd2 = clusterCentres[j];
-                            }
+                            points[i].PointClass = points[clusterCenters[j]].PointClass;
+                            min = distances[i][clusterCenters[j]];
+                            minInd1 = i;
+                            minInd2 = clusterCenters[j];
                         }
                     }
                 }
@@ -128,12 +107,104 @@ namespace ExamRecog
                 min = 100;
             }
         }
+
+        private void ClassesAllocation(List<Point> clusterCenters)
+        {
+            double min = 100.0;
+            for (int i = 0; i < points.Count; i++)
+            {
+                for (int j = 0; j < clusterCenters.Count; j++)
+                {
+                    if (!clusterCenters.Contains(points[i]))
+                    {
+                        if (distances[i][j] < min)
+                        {
+                            points[i].PointClass = clusterCenters[j].PointClass;
+                            min = distances[i][j];
+                        }
+                    }
+                }
+                min = 100;
+            }
+        }
+
+        public void KIntergroupAverage()
+        {
+            bool changed;
+            var iter = 0;
+            var clusterCenters = new List<Point>() { new Point(points[0].X, points[0].Y, points[0].PointClass),
+                new Point(points[1].X, points[1].Y, points[1].PointClass), new Point(points[2].X, points[2].Y, points[2].PointClass) };
+            clusterCenters[0].PointClass = 0;
+            clusterCenters[1].PointClass = 1;
+            clusterCenters[2].PointClass = 2;
+            var clusterCentersOld = new List<Point>() { new Point(clusterCenters[0].X, clusterCenters[0].Y, clusterCenters[0].PointClass),
+                new Point(clusterCenters[1].X, clusterCenters[1].Y, clusterCenters[1].PointClass), new Point(clusterCenters[2].X, clusterCenters[2].Y, clusterCenters[2].PointClass) };
+            for (int i = 0; i < points.Count; i++)
+            {
+                for (int j = 0; j < clusterCenters.Count; j++)
+                {
+                    distances[i].Add(0);
+                }
+            }
+            do
+            {
+                changed = false;
+                for (int i = 0; i < points.Count; i++)
+                {
+                    for (int j = 0; j < clusterCenters.Count; j++)
+                    {
+                        distances[i][j]=CalculateDistances(points[i], clusterCenters[j]);
+                    }
+                }
+                ClassesAllocation(clusterCenters);
+                for (int i = 0; i < clusterCenters.Count; i++)
+                {
+                    clusterCenters[i].X = 0;
+                    clusterCenters[i].Y = 0;
+                }
+                for (int i = 0; i < clusterCenters.Count; i++)
+                {
+                    for (int j = 0; j < points.Count; j++)
+                    {
+                        if (points[j].PointClass == i)
+                        {
+                            iter++;
+                            clusterCenters[i].X += points[j].X;
+                            clusterCenters[i].Y += points[j].Y;
+                        }
+                    }
+                    clusterCenters[i].X = clusterCenters[i].X / iter;
+                    clusterCenters[i].Y = clusterCenters[i].Y / iter;
+                    iter = 0;
+                }
+                for (int i = 0; i < clusterCenters.Count; i++)
+                {
+                    if (clusterCenters[i].X == clusterCentersOld[i].X && clusterCenters[i].Y == clusterCentersOld[i].Y)
+                        continue;
+                    else
+                    {
+                        changed = true;
+                        clusterCentersOld[i].X = clusterCenters[i].X;
+                        clusterCentersOld[i].Y = clusterCenters[i].Y;
+                    }
+                }
+
+            } while (changed);
+
+        }
+
         public void Maximin()
         {
             var max = 0.0;
             int maxInd1 = -1, maxInd2 = -1, minMaxInd1, minMaxInd2;
-            var clusterCentres = new List<int>();
-            CalculateDistances();
+            var clusterCenters = new List<int>();
+            for (int i = 0; i < points.Count; i++)
+            {
+                for (int j = 0; j < points.Count; j++)
+                {
+                    distances[i].Add(CalculateDistances(points[i], points[j]));
+                }
+            }
 
             for (int i = 0; i < points.Count; i++)
             {
@@ -148,40 +219,60 @@ namespace ExamRecog
                 }
             }
             max = 0.0;
-            clusterCentres.Add(maxInd1);
-            clusterCentres.Add(maxInd2);
+            clusterCenters.Add(maxInd1);
+            clusterCenters.Add(maxInd2);
             points[maxInd1].PointClass = 0;
             points[maxInd2].PointClass = 1;
+            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            var textBuff = string.Empty;
+            for (int i = 0; i < points.Count; i++)
+            {
+                for (int j = 0; j < points.Count; j++)
+                {
+                    para.Range.Text += "ρ(X" + i + " X" + j + ") = " + distances[i][j];
+                }
+                para.Range.Text += "\n";
+            }
             do
             {
-                ClassesAllocation(out minMaxInd1, out minMaxInd2, clusterCentres);
+                ClassesAllocation(out minMaxInd1, out minMaxInd2, clusterCenters);
 
                 var centresDistancesSum = 0.0;
-                for (int i = 0; i < clusterCentres.Count; i++)
+                for (int i = 0; i < clusterCenters.Count; i++)
                 {
-                    for (int j = 0; j < clusterCentres.Count; j++)
+                    for (int j = 0; j < clusterCenters.Count; j++)
                     {
-                        centresDistancesSum += distances[clusterCentres[i]][clusterCentres[j]];
+                        centresDistancesSum += distances[clusterCenters[i]][clusterCenters[j]];
                     }
                 }
-                centresDistancesSum = centresDistancesSum / clusterCentres.Count / Math.Pow(2, clusterCentres.Count - 1);
+                centresDistancesSum = centresDistancesSum / clusterCenters.Count / Math.Pow(2, clusterCenters.Count - 1);
+
+                para.Range.Text += "Ищем максимум от найденных минимумов, он соответствует " + minMaxInd1 + " и равен " + distances[minMaxInd1][minMaxInd2];
+                textBuff += "Половина среднего расстояния между известными центрами кластеров равна " + centresDistancesSum + ". Поскольку " + distances[minMaxInd1][minMaxInd2];
                 if (distances[minMaxInd1][minMaxInd2] > centresDistancesSum)
                 {
-                    clusterCentres.Add(minMaxInd1);
-                    points[minMaxInd1].PointClass = clusterCentres.Count - 1;
+                    clusterCenters.Add(minMaxInd1);
+                    points[minMaxInd1].PointClass = clusterCenters.Count - 1;
+                    para.Range.Text += textBuff + ">" + centresDistancesSum + ", то X" + minMaxInd1 + " - новый центр кластеров.";
                 }
-                else break;
+                else
+                {
+                    para.Range.Text += textBuff + "<" + centresDistancesSum + ", то новых кластеров нет.";
+                    break;
+                }
+                textBuff = string.Empty;
             } while (true);
-            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
-            for (int i = 0; i < clusterCentres.Count; i++)
+            textBuff = string.Empty;
+            for (int i = 0; i < clusterCenters.Count; i++)
             {
-                para.Range.Text+= "ω_" + i + "= {";
                 for (int j = 0; j < points.Count; j++)
                 {
                     if (points[j].PointClass == i)
-                        para.Range.Text+= "X_" + j + " ";
+                        textBuff += "X_" + j + " ";
                 }
-                para.Range.Text+= "} ";
+
+                para.Range.Text += "ω_" + i + "= {" + textBuff + "} ";
+                textBuff = string.Empty;
             }
             SaveDoc();
         }
