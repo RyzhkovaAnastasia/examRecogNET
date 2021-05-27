@@ -19,6 +19,7 @@ namespace ExamRecog
             Console.WriteLine("8. Обучение перцептрона с фиксированным приращением:");
             Console.WriteLine("9. Введите номер задачи:");
             number = int.Parse(Console.ReadLine());
+            solver.EnterPoints();
             switch (number)
             {
                 case 1:
@@ -31,6 +32,7 @@ namespace ExamRecog
                 case 4:
                     break;
                 case 5:
+                    solver.Maximin();
                     break;
                 case 6:
                     break;
