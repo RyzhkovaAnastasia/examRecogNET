@@ -30,6 +30,9 @@ namespace ExamRecog
                 case 3:
                     break;
                 case 4:
+                    Console.WriteLine("Введите пороговое значение (диапазон от максимального внутрикластерного до минимального межкластерного).");
+                    var threshold = double.Parse(Console.ReadLine());
+                    solver.SimpleThreshold(threshold);
                     break;
                 case 5:
                     solver.Maximin();

@@ -23,7 +23,7 @@ namespace ExamRecog
         public void EnterPoints()
         {
             var pointClass = 0;
-
+            Console.WriteLine("Порядок точек может иметь значение, вводите, начиная с левого верхнего угла (верхние точки имеют приоритет).");
             do
             {
                 while (true)
@@ -60,6 +60,10 @@ namespace ExamRecog
                 ref oMissing, ref oMissing, ref oMissing, ref oMissing,
                 ref oMissing);
             Console.WriteLine("Ваш документ готов! Он находится в bin->Debug");
+            oDoc.Close(ref oMissing, ref oMissing, ref oMissing);
+            oDoc = null;
+            oWord.Quit(ref oMissing, ref oMissing, ref oMissing);
+            oWord = null;
         }
 
         public void FirstSolutionFunction()
@@ -153,7 +157,7 @@ namespace ExamRecog
                 {
                     for (int j = 0; j < clusterCenters.Count; j++)
                     {
-                        distances[i][j]=CalculateDistances(points[i], clusterCenters[j]);
+                        distances[i][j] = CalculateDistances(points[i], clusterCenters[j]);
                     }
                 }
                 ClassesAllocation(clusterCenters);
@@ -190,7 +194,21 @@ namespace ExamRecog
                 }
 
             } while (changed);
+            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            para.Range.Text += "Метод k-внутригрупповых средних.";
+            var textBuff = string.Empty;
+            for (int i = 0; i < clusterCenters.Count; i++)
+            {
+                for (int j = 0; j < points.Count; j++)
+                {
+                    if (points[j].PointClass == i)
+                        textBuff += "X_" + j + " ";
+                }
 
+                para.Range.Text += "ω_" + i + "= {" + textBuff + "} ";
+                textBuff = string.Empty;
+            }
+            SaveDoc();
         }
 
         public void Maximin()
@@ -225,6 +243,7 @@ namespace ExamRecog
             points[maxInd2].PointClass = 1;
             Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
             var textBuff = string.Empty;
+            para.Range.Text += "Метод максимин.";
             for (int i = 0; i < points.Count; i++)
             {
                 for (int j = 0; j < points.Count; j++)
@@ -263,6 +282,48 @@ namespace ExamRecog
                 textBuff = string.Empty;
             } while (true);
             textBuff = string.Empty;
+            for (int i = 0; i < clusterCenters.Count; i++)
+            {
+                for (int j = 0; j < points.Count; j++)
+                {
+                    if (points[j].PointClass == i)
+                        textBuff += "X_" + j + " ";
+                }
+
+                para.Range.Text += "ω_" + i + "= {" + textBuff + "} ";
+                textBuff = string.Empty;
+            }
+            SaveDoc();
+        }
+
+        public void SimpleThreshold(double threshold)
+        {
+            var pointClass = 0;
+            var clusterCenters = new List<int>() { 0 };
+            var currentDistance = 0.0;
+            var clusterCenterAppeared = true;
+            for (int i = 0; i < points.Count; i++)
+            {
+                for (int j = 0; j < clusterCenters.Count; j++)
+                {
+                    currentDistance = CalculateDistances(points[i], points[clusterCenters[j]]);
+                    if (currentDistance < threshold)
+                    {
+                        points[i].PointClass = points[clusterCenters[j]].PointClass;
+                        clusterCenterAppeared = false;
+                    }
+                }
+                if (clusterCenterAppeared && !clusterCenters.Contains(i))
+                {
+                    points[i].PointClass = ++pointClass;
+                    clusterCenters.Add(i);
+                    i = -1;
+                }
+                clusterCenterAppeared = true;
+            }
+            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            para.Range.Text += "Метод простого порогового значения.";
+            var textBuff = string.Empty;
             for (int i = 0; i < clusterCenters.Count; i++)
             {
                 for (int j = 0; j < points.Count; j++)
