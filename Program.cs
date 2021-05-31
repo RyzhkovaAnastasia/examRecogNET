@@ -41,6 +41,7 @@ namespace ExamRecog
                     solver.KIntergroupAverage();
                     break;
                 case 7:
+                    solver.PerceptronFrac();
                     break;
                 case 8:
                     solver.PerceptronFix();
