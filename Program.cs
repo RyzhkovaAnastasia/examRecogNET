@@ -17,7 +17,7 @@ namespace ExamRecog
             Console.WriteLine("6. Кластеризация к-внутригрупповых средних:");
             Console.WriteLine("7. Обучение перцептрона с дробной коррекцией весов:");
             Console.WriteLine("8. Обучение перцептрона с фиксированным приращением:");
-            Console.WriteLine("9. Введите номер задачи:");
+            Console.WriteLine("9. Обучение перцептрона, алгоритм коррекции абсолютной величины:");
             number = int.Parse(Console.ReadLine());
             solver.EnterPoints();
             switch (number)
@@ -43,11 +43,13 @@ namespace ExamRecog
                 case 7:
                     break;
                 case 8:
+                    solver.PerceptronFix();
                     break;
                 case 9:
                     break;
 
             }
+            Console.Read();
         }
     }
 }
