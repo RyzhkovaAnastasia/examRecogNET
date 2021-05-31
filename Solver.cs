@@ -345,7 +345,7 @@ namespace ExamRecog
             double[] W = new double[]{ 1, 1, 1 };
 
             Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
-            AddTextToWord(para, "Обучение перцепрона с фиксированным приращение, C = 1");
+            AddTextToWord(para, "Обучение перцепрона с фиксированным приращением, C = 1");
             for (int i = 0; i < points.Count; i++)
             {
                 AddTextToWord(para, "X"+(i+1)+" = ["+points[i].X+";"+points[i].Y+";1] принадлежит классу №"+ (points[i].PointClass + 1));
@@ -362,6 +362,7 @@ namespace ExamRecog
                 W[0] = 1;
                 W[1] = 1;
                 W[2] = 1;
+                step = 1;
 
                 while (flag) { // пока вектор W будет изменяться
                     flag = false;
@@ -382,7 +383,7 @@ namespace ExamRecog
                             W[2] = W[2] + 1;
                             flag = true;
                         }
-                        else if(points[i].PointClass != @class && res > 0)
+                        else if(points[i].PointClass != @class && res >= 0)
                         {
                             AddTextToWord(para, $"d{@class+1}(X{i+1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class+1}({step - 1}) - X{i+1} " +
                                 $"= [{W[0]};{W[1]};{W[2]}]^-1 - [{points[i].X};{points[i].Y};1]^-1 = [{W[0]-points[i].X};{W[1] - points[i].Y};{W[2] - 1}]^-1 \n");
@@ -402,6 +403,85 @@ namespace ExamRecog
             }
             AddTextToWord(para, $"И так далее пока прохождение всех точек не приведет ни к наказанию, ни к поощрению перцептрона. \n");
             SaveDoc();
+        }
+
+
+        public void PerceptronWeight() {
+            Console.WriteLine("НЕ ОТПРАВЛЯЙТЕ ПОЛНОЕ РЕШЕНИЕ, на 3-4 итерации закончите файл. Конец файла должен содержать слова о условии конца итераций:");
+            Console.WriteLine("Повторяем итерации до тех пор, пока перцептрон будет поощряться и наказываться. Если в итерации перцептрон изменен не был, это означает конец решения.");
+            double[] W = new double[] { 1, 1, 1 };
+            double C = 0; // приращение
+
+            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            AddTextToWord(para, "Обучение перцепрона с коррекцией весов");
+            for (int i = 0; i < points.Count; i++)
+            {
+                AddTextToWord(para, "X" + (i + 1) + " = [" + points[i].X + ";" + points[i].Y + ";1] принадлежит классу №" + (points[i].PointClass + 1));
+            }
+            AddTextToWord(para, "d1(X1)=W1`*X W1`(0)=[1;1;1]");
+
+
+            int step = 1;
+            int @class = 0;
+
+            for (@class = 0; @class <= points[points.Count - 1].PointClass; @class++)
+            {
+                AddTextToWord(para, $"Найдем решающую функцию #{@class + 1} \n");
+                bool flag = true; //флаг завершения алгоритма
+                W[0] = 1;
+                W[1] = 1;
+                W[2] = 1;
+                step = 1;
+
+                for(int e = 0; e < 5 && flag; e++)
+                { // пока вектор W будет изменяться
+                    flag = false;
+                    for (int i = 0; i < points.Count; i++)
+                    {
+                        double res = points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2];
+                        AddTextToWord(para, $"d{@class + 1}(X{i + 1})= [{W[0]};{W[1]};{W[2]}] * [{points[i].X};{points[i].Y};1]^-1 = {res}");
+
+                        if (points[i].PointClass == @class && res > 0)
+                        {
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, поэтому перцептрон оставляем без изменений.W{@class + 1}({step}) = W{@class + 1}({step - 1}) \n");
+                        }
+                        else if (points[i].PointClass == @class && res <= 0)
+                        {
+                            C = Math.Ceiling(Convert.ToDouble(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
+                            if (C == 0) C = 1;
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, должно быть > 0, поэтому перцептрон поощряем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) + C*X{i + 1}\n " +
+                               $"Вычисляем С: С = W{@class+1}*X1 / (X{i+1} * X`{i+1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
+                                $"[{W[0]};{W[1]};{W[2]}]^-1 + {C}*[{points[i].X};{points[i].Y};1]^-1 = [{W[0] + C*points[i].X};{W[1] + C*points[i].Y};{W[2] + C*1}]^-1 \n"); ;
+                            W[0] = W[0] + C*points[i].X;
+                            W[1] = W[1] + C*points[i].Y;
+                            W[2] = W[2] + C*1;
+                            flag = true;
+                        }
+                        else if (points[i].PointClass != @class && res >= 0)
+                        {
+                            C = Math.Ceiling(Convert.ToDouble(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
+                            if (C == 0) C = 1;
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) - C*X{i + 1} \n" +
+                                $"Вычисляем С: С = W{@class + 1}*X1 / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
+                                $"[{W[0]};{W[1]};{W[2]}]^-1 - {C}*[{points[i].X};{points[i].Y};1]^-1 = [{W[0] -C* points[i].X};{W[1] - C*points[i].Y};{W[2] - C*1}]^-1 \n");
+                            W[0] = W[0] - C*points[i].X;
+                            W[1] = W[1] - C*points[i].Y;
+                            W[2] = W[2] - C*1;
+                            flag = true;
+                        }
+                        else
+                        {
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, поэтому перцептрон оставляем без изменений.W1({step}) = W1({step - 1}) \n");
+                        }
+                        step++;
+                    }
+
+                }
+                AddTextToWord(para, $"И так далее пока прохождение всех точек не приведет ни к наказанию, ни к поощрению перцептрона. \n");
+            }
+           
+            SaveDoc();
+
         }
     }
 }

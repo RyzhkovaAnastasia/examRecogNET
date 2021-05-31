@@ -46,6 +46,7 @@ namespace ExamRecog
                     solver.PerceptronFix();
                     break;
                 case 9:
+                    solver.PerceptronWeight();
                     break;
 
             }
