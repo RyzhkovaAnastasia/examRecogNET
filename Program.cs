@@ -28,6 +28,7 @@ namespace ExamRecog
                 case 2:
                     break;
                 case 3:
+                    solver.ThirdSolutionFunction();
                     break;
                 case 4:
                     Console.WriteLine("Введите пороговое значение (диапазон от максимального внутрикластерного до минимального межкластерного).");

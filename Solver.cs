@@ -23,6 +23,7 @@ namespace ExamRecog
         public void EnterPoints()
         {
             var pointClass = 0;
+            Console.WriteLine("Дроби вводятся через точку!");
             Console.WriteLine("Порядок точек может иметь значение, вводите, начиная с левого верхнего угла (верхние точки имеют приоритет).");
             do
             {
@@ -30,11 +31,11 @@ namespace ExamRecog
                 {
                     Console.WriteLine("Введите точку, когда закончите введите в у 111:");
                     Console.Write("X = ");
-                    int x = int.Parse(Console.ReadLine());
+                    double x = double.Parse(Console.ReadLine());
                     Console.Write("Y = ");
-                    int y = int.Parse(Console.ReadLine());
+                    double y = double.Parse(Console.ReadLine());
 
-                    if (y == 111) break;
+                    if (y == 111.0) break;
                     points.Add(new Point(x, y, pointClass));
                 }
                 pointClass++;
@@ -75,6 +76,65 @@ namespace ExamRecog
 
 
             SaveDoc();
+        }
+
+        public void ThirdSolutionFunction()
+        {
+            int answ = 0;
+            int @class = 0;
+            bool flag = true;
+            List<Point> etalon = new List<Point>();
+            do
+            {
+                Console.WriteLine("Помощь в выборе эталонов. Введите предполагаемые эталоны:");
+                while (true)
+                {
+                    Console.WriteLine("Введите точку, когда закончите введите в у 111:");
+                    Console.Write("X = ");
+                    double x = double.Parse(Console.ReadLine());
+                    Console.Write("Y = ");
+                    double y = double.Parse(Console.ReadLine());
+
+                    if (y == 111) break;
+                    etalon.Add(new Point(x, y, @class++));
+                }
+
+                for (int i = 0; i < points.Count; i++)
+                {
+                    for (int j = 0; j < etalon.Count; j++)
+                    {
+                        if (points[i].PointClass == etalon[j].PointClass)
+                        {
+                            double t = etalon[j].X * points[i].X + etalon[j].Y * points[i].Y - (0.5 * (etalon[j].X * etalon[j].X + etalon[j].Y * etalon[j].Y));
+                            if (t < 0)
+                            {
+                                Console.WriteLine($"X{i + 1} class = {points[i].PointClass + 1} for etalon class {etalon[j].PointClass}=> {t} - неудача");
+                                flag = false;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"X{i + 1} class = {points[i].PointClass + 1} for etalon class {etalon[j].PointClass}=> {t}");
+                            }
+                        }
+                        else if (points[i].PointClass != etalon[j].PointClass)
+                        {
+                            double t = (etalon[j].X * points[i].X + etalon[j].Y * points[i].Y) - (0.5 * (etalon[j].X * etalon[j].X + etalon[j].Y * etalon[j].Y));
+                            if (t > 0)
+                            {
+                                Console.WriteLine($"X{i + 1} class = {points[i].PointClass + 1} for etalon class {etalon[j].PointClass}=> {t} - неудача");
+                                flag = false;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"X{i + 1} class = {points[i].PointClass + 1} for etalon class {etalon[j].PointClass}=> {t}");
+                            }
+                        }
+                    }
+                }
+                Console.WriteLine("Повторить? да - 1, нет - 111");
+                answ = int.Parse(Console.ReadLine());
+               
+            } while (answ != 111);
         }
 
         public double CalculateDistances(Point p1, Point p2)
