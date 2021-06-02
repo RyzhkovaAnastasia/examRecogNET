@@ -197,6 +197,7 @@ namespace ExamRecog
         {
             bool changed;
             var iter = 0;
+            var temp = string.Empty;
             var clusterCenters = new List<Point>() { new Point(points[0].X, points[0].Y, points[0].PointClass),
                 new Point(points[1].X, points[1].Y, points[1].PointClass), new Point(points[2].X, points[2].Y, points[2].PointClass) };
             clusterCenters[0].PointClass = 0;
@@ -206,6 +207,12 @@ namespace ExamRecog
                 new Point(clusterCenters[1].X, clusterCenters[1].Y, clusterCenters[1].PointClass), new Point(clusterCenters[2].X, clusterCenters[2].Y, clusterCenters[2].PointClass) };
 
             Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            for (int i = 0; i < points.Count; i++)
+            {
+                temp += "X`" + i + " = [" + points[i].X + ";" + points[i].Y + "] ";
+            }
+            para.Range.Text += temp;
+            temp = string.Empty;
             para.Range.Text += "Метод k-внутригрупповых средних.";
             for (int i = 0; i < points.Count; i++)
             {
@@ -225,14 +232,14 @@ namespace ExamRecog
                     }
                 }
                 ClassesAllocation(clusterCenters);
-                var temp = "min (";
+                temp = "min (";
                 for (int i = 0; i < points.Count; i++)
                 {
                     for (int j = 0; j < clusterCenters.Count; j++)
                     {
                         temp += "ρ(X" + j + "X" + i + ");";
                     }
-                    para.Range.Text += temp + ") ="+ "ρ(X" +points[i].PointClass+"X"+i+")"+ "\nЗначит X" + i + "є ω" + points[i].PointClass;
+                    para.Range.Text += temp + ") =" + "ρ(X" + points[i].PointClass + "X" + i + ") = " + distances[i][points[i].PointClass] + "\nЗначит X" + i + "є ω" + points[i].PointClass;
                     temp = "min (";
                 }
 
@@ -242,6 +249,8 @@ namespace ExamRecog
                     clusterCenters[i].Y = 0;
                 }
                 para.Range.Text += "Пересчитываем центры кластеров.";
+                temp = string.Empty;
+                var temp2 = string.Empty;
                 for (int i = 0; i < clusterCenters.Count; i++)
                 {
                     for (int j = 0; j < points.Count; j++)
@@ -250,13 +259,19 @@ namespace ExamRecog
                         {
                             iter++;
                             clusterCenters[i].X += points[j].X;
+                            temp += points[j].X + "+";
                             clusterCenters[i].Y += points[j].Y;
+                            temp2 += points[j].Y + "+";
                         }
                     }
+                    temp = temp.Remove(temp.Length - 1, 1);
+                    temp2 = temp2.Remove(temp2.Length - 1, 1);
                     clusterCenters[i].X = clusterCenters[i].X / iter;
                     clusterCenters[i].Y = clusterCenters[i].Y / iter;
-                    para.Range.Text += "Z" + i + "," + 1 + " = " + clusterCenters[i].X;
-                    para.Range.Text += "Z" + i + "," + 2 + " = " + clusterCenters[i].Y;
+                    para.Range.Text += "Z" + i + "," + 1 + " = " + temp + "/ " + iter + " = " + clusterCenters[i].X;
+                    para.Range.Text += "Z" + i + "," + 2 + " = " + temp2 + "/ " + iter + " = " + clusterCenters[i].Y;
+                    temp = string.Empty;
+                    temp2 = string.Empty;
                     iter = 0;
                 }
                 for (int i = 0; i < clusterCenters.Count; i++)
@@ -293,6 +308,7 @@ namespace ExamRecog
             var max = 0.0;
             int maxInd1 = -1, maxInd2 = -1, minMaxInd1, minMaxInd2;
             var clusterCenters = new List<int>();
+            var temp = string.Empty;
             for (int i = 0; i < points.Count; i++)
             {
                 for (int j = 0; j < points.Count; j++)
@@ -319,6 +335,12 @@ namespace ExamRecog
             points[maxInd1].PointClass = 0;
             points[maxInd2].PointClass = 1;
             Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            for (int i = 0; i < points.Count; i++)
+            {
+                temp += "X`" + i + " = [" + points[i].X + ";" + points[i].Y + "] ";
+            }
+            para.Range.Text += temp;
+            temp = string.Empty;
             var textBuff = string.Empty;
             para.Range.Text += "Метод максимин.";
             for (int i = 0; i < points.Count; i++)
@@ -381,7 +403,14 @@ namespace ExamRecog
             var clusterCenters = new List<int>() { 0 };
             var currentDistance = 0.0;
             var clusterCenterAppeared = true;
+            var temp = string.Empty;
             Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            for(int i = 0; i < points.Count; i++)
+            {
+                temp += "X`" + i + " = [" + points[i].X + ";" + points[i].Y + "] ";
+            }
+            para.Range.Text += temp;
+            temp = string.Empty;
             para.Range.Text += "Метод простого порогового значения.\nРассматриваем точки сверху вниз, слева направо.";
             para.Range.Text += "Выбираем порог в диапазоне [;] - T = " + threshold;
             for (int i = 0; i < points.Count; i++)
@@ -389,12 +418,14 @@ namespace ExamRecog
                 for (int j = 0; j < clusterCenters.Count; j++)
                 {
                     currentDistance = CalculateDistances(points[i], points[clusterCenters[j]]);
+                    temp += "ρ(X" + i + " X" + clusterCenters[j] + ") = " + currentDistance+"; ";
                     if (currentDistance < threshold)
                     {
                         points[i].PointClass = points[clusterCenters[j]].PointClass;
                         clusterCenterAppeared = false;
                     }
                 }
+                para.Range.Text += temp;temp = string.Empty;
                 if (clusterCenterAppeared && !clusterCenters.Contains(i))
                 {
                     points[i].PointClass = ++pointClass;
