@@ -454,7 +454,7 @@ namespace ExamRecog
                     flag = false;
                     for (int i = 0; i < points.Count; i++)
                     {
-                        double res = points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2];
+                        double res = Math.Round(points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2], 2);
                         AddTextToWord(para, $"d{@class + 1}(X{i + 1})= [{W[0]};{W[1]};{W[2]}] * [{points[i].X};{points[i].Y};1]^-1 = {res}");
 
                         if (points[i].PointClass == @class && res > 0)
@@ -526,7 +526,7 @@ namespace ExamRecog
                     flag = false;
                     for (int i = 0; i < points.Count; i++)
                     {
-                        double res = points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2];
+                        double res = Math.Round(points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2], 2);
                         AddTextToWord(para, $"d{@class + 1}(X{i + 1})= [{W[0]};{W[1]};{W[2]}] * [{points[i].X};{points[i].Y};1]^-1 = {res}");
 
                         if (points[i].PointClass == @class && res > 0)
@@ -605,7 +605,7 @@ namespace ExamRecog
                     flag = false;
                     for (int i = 0; i < points.Count; i++)
                     {
-                        double res = points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2];
+                        double res = Math.Round(points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2], 2);
                         AddTextToWord(para, $"d{@class + 1}(X{i + 1})= [{W[0]};{W[1]};{W[2]}] * [{points[i].X};{points[i].Y};1]^-1 = {res}");
 
                         if (points[i].PointClass == @class && res > 0)
