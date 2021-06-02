@@ -31,7 +31,7 @@ namespace ExamRecog
                     solver.ThirdSolutionFunction();
                     break;
                 case 4:
-                    Console.WriteLine("Введите пороговое значение (диапазон от максимального внутрикластерного до минимального межкластерного).");
+                    Console.WriteLine("Введите пороговое значение/n (диапазон от максимального внутрикластерного до минимального межкластерного, дробь через запятую).");
                     var threshold = double.Parse(Console.ReadLine());
                     solver.SimpleThreshold(threshold);
                     break;

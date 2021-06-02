@@ -133,7 +133,7 @@ namespace ExamRecog
                 }
                 Console.WriteLine("Повторить? да - 1, нет - 111");
                 answ = int.Parse(Console.ReadLine());
-               
+
             } while (answ != 111);
         }
 
@@ -163,8 +163,9 @@ namespace ExamRecog
                         }
                     }
                 }
-                if (min > maximin)
+                if (min > maximin && !clusterCenters.Contains(i))
                 {
+                    maximin = min;
                     ind1 = minInd1;
                     ind2 = minInd2;
                 }
@@ -203,6 +204,9 @@ namespace ExamRecog
             clusterCenters[2].PointClass = 2;
             var clusterCentersOld = new List<Point>() { new Point(clusterCenters[0].X, clusterCenters[0].Y, clusterCenters[0].PointClass),
                 new Point(clusterCenters[1].X, clusterCenters[1].Y, clusterCenters[1].PointClass), new Point(clusterCenters[2].X, clusterCenters[2].Y, clusterCenters[2].PointClass) };
+
+            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            para.Range.Text += "Метод k-внутригрупповых средних.";
             for (int i = 0; i < points.Count; i++)
             {
                 for (int j = 0; j < clusterCenters.Count; j++)
@@ -221,11 +225,23 @@ namespace ExamRecog
                     }
                 }
                 ClassesAllocation(clusterCenters);
+                var temp = "min (";
+                for (int i = 0; i < points.Count; i++)
+                {
+                    for (int j = 0; j < clusterCenters.Count; j++)
+                    {
+                        temp += "ρ(X" + j + "X" + i + ");";
+                    }
+                    para.Range.Text += temp + ") ="+ "ρ(X" +points[i].PointClass+"X"+i+")"+ "\nЗначит X" + i + "є ω" + points[i].PointClass;
+                    temp = "min (";
+                }
+
                 for (int i = 0; i < clusterCenters.Count; i++)
                 {
                     clusterCenters[i].X = 0;
                     clusterCenters[i].Y = 0;
                 }
+                para.Range.Text += "Пересчитываем центры кластеров.";
                 for (int i = 0; i < clusterCenters.Count; i++)
                 {
                     for (int j = 0; j < points.Count; j++)
@@ -239,6 +255,8 @@ namespace ExamRecog
                     }
                     clusterCenters[i].X = clusterCenters[i].X / iter;
                     clusterCenters[i].Y = clusterCenters[i].Y / iter;
+                    para.Range.Text += "Z" + i + "," + 1 + " = " + clusterCenters[i].X;
+                    para.Range.Text += "Z" + i + "," + 2 + " = " + clusterCenters[i].Y;
                     iter = 0;
                 }
                 for (int i = 0; i < clusterCenters.Count; i++)
@@ -254,9 +272,8 @@ namespace ExamRecog
                 }
 
             } while (changed);
-            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
-            para.Range.Text += "Метод k-внутригрупповых средних.";
             var textBuff = string.Empty;
+            para.Range.Text += "Результат:";
             for (int i = 0; i < clusterCenters.Count; i++)
             {
                 for (int j = 0; j < points.Count; j++)
@@ -317,16 +334,18 @@ namespace ExamRecog
                 ClassesAllocation(out minMaxInd1, out minMaxInd2, clusterCenters);
 
                 var centresDistancesSum = 0.0;
+                var iter = 0;
                 for (int i = 0; i < clusterCenters.Count; i++)
                 {
-                    for (int j = 0; j < clusterCenters.Count; j++)
+                    for (int j = i + 1; j < clusterCenters.Count; j++)
                     {
                         centresDistancesSum += distances[clusterCenters[i]][clusterCenters[j]];
+                        iter++;
                     }
                 }
-                centresDistancesSum = centresDistancesSum / clusterCenters.Count / Math.Pow(2, clusterCenters.Count - 1);
+                centresDistancesSum = centresDistancesSum / 2 / iter;
 
-                para.Range.Text += "Ищем максимум от найденных минимумов, он соответствует " + minMaxInd1 + " и равен " + distances[minMaxInd1][minMaxInd2];
+                para.Range.Text += "Ищем максимум от найденных минимумов, он соответствует расстоянию между " + minMaxInd1 + " и " + minMaxInd2 + " и равен " + distances[minMaxInd1][minMaxInd2];
                 textBuff += "Половина среднего расстояния между известными центрами кластеров равна " + centresDistancesSum + ". Поскольку " + distances[minMaxInd1][minMaxInd2];
                 if (distances[minMaxInd1][minMaxInd2] > centresDistancesSum)
                 {
@@ -362,6 +381,9 @@ namespace ExamRecog
             var clusterCenters = new List<int>() { 0 };
             var currentDistance = 0.0;
             var clusterCenterAppeared = true;
+            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
+            para.Range.Text += "Метод простого порогового значения.\nРассматриваем точки сверху вниз, слева направо.";
+            para.Range.Text += "Выбираем порог в диапазоне [;] - T = " + threshold;
             for (int i = 0; i < points.Count; i++)
             {
                 for (int j = 0; j < clusterCenters.Count; j++)
@@ -377,13 +399,15 @@ namespace ExamRecog
                 {
                     points[i].PointClass = ++pointClass;
                     clusterCenters.Add(i);
+                    para.Range.Text += "Точка X" + i + " - центр нового кластера.";
                     i = -1;
                 }
+                else
+                    para.Range.Text += "Точка X" + i + "є ω" + points[i].PointClass;
                 clusterCenterAppeared = true;
             }
-            Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
-            para.Range.Text += "Метод простого порогового значения.";
             var textBuff = string.Empty;
+            para.Range.Text += "Результат:";
             for (int i = 0; i < clusterCenters.Count; i++)
             {
                 for (int j = 0; j < points.Count; j++)
@@ -402,22 +426,23 @@ namespace ExamRecog
         {
             Console.WriteLine("НЕ ОТПРАВЛЯЙТЕ ПОЛНОЕ РЕШЕНИЕ, на 3-4 итерации закончите файл. Конец файла должен содержать слова о условии конца итераций:");
             Console.WriteLine("Повторяем итерации до тех пор, пока перцептрон будет поощряться и наказываться. Если в итерации перцептрон изменен не был, это означает конец решения.");
-            double[] W = new double[]{ 1, 1, 1 };
+            double[] W = new double[] { 1, 1, 1 };
 
             Word.Paragraph para = oDoc.Paragraphs.Add(ref oMissing);
             AddTextToWord(para, "Обучение перцепрона с фиксированным приращением, C = 1");
             for (int i = 0; i < points.Count; i++)
             {
-                AddTextToWord(para, "X"+(i+1)+" = ["+points[i].X+";"+points[i].Y+";1] принадлежит классу №"+ (points[i].PointClass + 1));
+                AddTextToWord(para, "X" + (i + 1) + " = [" + points[i].X + ";" + points[i].Y + ";1] принадлежит классу №" + (points[i].PointClass + 1));
             }
             AddTextToWord(para, "d1(X1)=W1`*X W1`(0)=[1;1;1]");
 
-            
+
             int step = 1;
             int @class = 0;
 
-            for (@class = 0; @class <= points[points.Count-1].PointClass; @class++ ) {
-                AddTextToWord(para, $"Найдем решающую функцию #{@class+1} \n");
+            for (@class = 0; @class <= points[points.Count - 1].PointClass; @class++)
+            {
+                AddTextToWord(para, $"Найдем решающую функцию #{@class + 1} \n");
                 bool flag = true; //флаг завершения алгоритма
                 W[0] = 1;
                 W[1] = 1;
@@ -430,24 +455,25 @@ namespace ExamRecog
                     for (int i = 0; i < points.Count; i++)
                     {
                         double res = points[i].X * W[0] + points[i].Y * W[1] + 1 * W[2];
-                        AddTextToWord(para, $"d{@class+1}(X{i+1})= [{W[0]};{W[1]};{W[2]}] * [{points[i].X};{points[i].Y};1]^-1 = {res}");
+                        AddTextToWord(para, $"d{@class + 1}(X{i + 1})= [{W[0]};{W[1]};{W[2]}] * [{points[i].X};{points[i].Y};1]^-1 = {res}");
 
                         if (points[i].PointClass == @class && res > 0)
                         {
-                            AddTextToWord(para, $"d{@class+1}(X{i+1})={res} > 0, поэтому перцептрон оставляем без изменений.W{@class + 1}({step}) = W{@class + 1}({step-1}) \n");
-                        } else if (points[i].PointClass == @class && res <= 0)
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, поэтому перцептрон оставляем без изменений.W{@class + 1}({step}) = W{@class + 1}({step - 1}) \n");
+                        }
+                        else if (points[i].PointClass == @class && res <= 0)
                         {
-                            AddTextToWord(para, $"d{@class+1}(X{i+1})={res} < 0, должно быть > 0, поэтому перцептрон поощряем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) + X{i+1} " +
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, должно быть > 0, поэтому перцептрон поощряем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) + X{i + 1} " +
                                $"= [{W[0]};{W[1]};{W[2]}]^-1 + [{points[i].X};{points[i].Y};1]^-1 = [{W[0] + points[i].X};{W[1] + points[i].Y};{W[2] + 1}]^-1 \n");
                             W[0] = W[0] + points[i].X;
                             W[1] = W[1] + points[i].Y;
                             W[2] = W[2] + 1;
                             flag = true;
                         }
-                        else if(points[i].PointClass != @class && res >= 0)
+                        else if (points[i].PointClass != @class && res >= 0)
                         {
-                            AddTextToWord(para, $"d{@class+1}(X{i+1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class+1}({step - 1}) - X{i+1} " +
-                                $"= [{W[0]};{W[1]};{W[2]}]^-1 - [{points[i].X};{points[i].Y};1]^-1 = [{W[0]-points[i].X};{W[1] - points[i].Y};{W[2] - 1}]^-1 \n");
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) - X{i + 1} " +
+                                $"= [{W[0]};{W[1]};{W[2]}]^-1 - [{points[i].X};{points[i].Y};1]^-1 = [{W[0] - points[i].X};{W[1] - points[i].Y};{W[2] - 1}]^-1 \n");
                             W[0] = W[0] - points[i].X;
                             W[1] = W[1] - points[i].Y;
                             W[2] = W[2] - 1;
@@ -455,11 +481,11 @@ namespace ExamRecog
                         }
                         else
                         {
-                            AddTextToWord(para, $"d{@class+1}(X{i+1})={res} < 0, поэтому перцептрон оставляем без изменений.W1({step}) = W1({step - 1}) \n");
+                            AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, поэтому перцептрон оставляем без изменений.W1({step}) = W1({step - 1}) \n");
                         }
                         step++;
                     }
-                   
+
                 }
                 if (flag) AddTextToWord(para, $"И так далее пока прохождение всех точек не приведет ни к наказанию, ни к поощрению перцептрона. \n");
             }
@@ -467,7 +493,8 @@ namespace ExamRecog
         }
 
 
-        public void PerceptronWeight() {
+        public void PerceptronWeight()
+        {
             Console.WriteLine("НЕ ОТПРАВЛЯЙТЕ ПОЛНОЕ РЕШЕНИЕ, на 3-4 итерации закончите файл. Конец файла должен содержать слова о условии конца итераций:");
             Console.WriteLine("Повторяем итерации до тех пор, пока перцептрон будет поощряться и наказываться. Если в итерации перцептрон изменен не был, это означает конец решения.");
             double[] W = new double[] { 1, 1, 1 };
@@ -494,7 +521,7 @@ namespace ExamRecog
                 W[2] = 1;
                 step = 1;
 
-                for(int e = 0; e < 5 && flag; e++)
+                for (int e = 0; e < 5 && flag; e++)
                 { // пока вектор W будет изменяться
                     flag = false;
                     for (int i = 0; i < points.Count; i++)
@@ -511,11 +538,11 @@ namespace ExamRecog
                             C = Math.Ceiling(Convert.ToDouble(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, должно быть > 0, поэтому перцептрон поощряем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) + C*X{i + 1}\n " +
-                               $"Вычисляем С: С = W{@class+1}*X{i+1} / (X{i+1} * X`{i+1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
-                                $"[{W[0]};{W[1]};{W[2]}]^-1 + {C}*[{points[i].X};{points[i].Y};1]^-1 = [{W[0] + C*points[i].X};{W[1] + C*points[i].Y};{W[2] + C*1}]^-1 \n"); ;
-                            W[0] = W[0] + C*points[i].X;
-                            W[1] = W[1] + C*points[i].Y;
-                            W[2] = W[2] + C*1;
+                               $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
+                                $"[{W[0]};{W[1]};{W[2]}]^-1 + {C}*[{points[i].X};{points[i].Y};1]^-1 = [{W[0] + C * points[i].X};{W[1] + C * points[i].Y};{W[2] + C * 1}]^-1 \n"); ;
+                            W[0] = W[0] + C * points[i].X;
+                            W[1] = W[1] + C * points[i].Y;
+                            W[2] = W[2] + C * 1;
                             flag = true;
                         }
                         else if (points[i].PointClass != @class && res >= 0)
@@ -523,11 +550,11 @@ namespace ExamRecog
                             C = Math.Ceiling(Convert.ToDouble(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) - C*X{i + 1} \n" +
-                                $"Вычисляем С: С = W{@class + 1}*X{i+1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
-                                $"[{W[0]};{W[1]};{W[2]}]^-1 - {C}*[{points[i].X};{points[i].Y};1]^-1 = [{W[0] -C* points[i].X};{W[1] - C*points[i].Y};{W[2] - C*1}]^-1 \n");
-                            W[0] = W[0] - C*points[i].X;
-                            W[1] = W[1] - C*points[i].Y;
-                            W[2] = W[2] - C*1;
+                                $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
+                                $"[{W[0]};{W[1]};{W[2]}]^-1 - {C}*[{points[i].X};{points[i].Y};1]^-1 = [{W[0] - C * points[i].X};{W[1] - C * points[i].Y};{W[2] - C * 1}]^-1 \n");
+                            W[0] = W[0] - C * points[i].X;
+                            W[1] = W[1] - C * points[i].Y;
+                            W[2] = W[2] - C * 1;
                             flag = true;
                         }
                         else
@@ -540,7 +567,7 @@ namespace ExamRecog
                 }
                 if (flag) AddTextToWord(para, $"И так далее пока прохождение всех точек не приведет ни к наказанию, ни к поощрению перцептрона. \n");
             }
-           
+
             SaveDoc();
 
         }
@@ -590,8 +617,8 @@ namespace ExamRecog
                             C = Math.Round(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1), 2);
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, должно быть > 0, поэтому перцептрон поощряем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) + C*X{i + 1}\n " +
-                               $"Вычисляем С: С = W{@class + 1}*X{i+1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
-                                $"[{W[0]};{W[1]};{W[2]}]^-1 + {C}*[{points[i].X};{points[i].Y};1]^-1 = [{Math.Round(W[0] + C * points[i].X), 2};{Math.Round(W[1] + C * points[i].Y, 2)};{Math.Round(W[2] + C * 1, 2)}]^-1 \n"); ;
+                               $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
+                                $"[{W[0]};{W[1]};{W[2]}]^-1 + {C}*[{points[i].X};{points[i].Y};1]^-1 = [{Math.Round(W[0] + C * points[i].X),2};{Math.Round(W[1] + C * points[i].Y, 2)};{Math.Round(W[2] + C * 1, 2)}]^-1 \n"); ;
                             W[0] = Math.Round(W[0] + C * points[i].X, 2);
                             W[1] = Math.Round(W[1] + C * points[i].Y, 2);
                             W[2] = Math.Round(W[2] + C * 1, 2);
@@ -602,7 +629,7 @@ namespace ExamRecog
                             C = Math.Round(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1), 2);
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) - C*X{i + 1} \n" +
-                                $"Вычисляем С: С = W{@class + 1}*X{i+1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
+                                $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
                                 $"[{W[0]};{W[1]};{W[2]}]^-1 - {C}*[{points[i].X};{points[i].Y};1]^-1 = [{Math.Round(W[0] - C * points[i].X, 2)};{Math.Round(W[1] - C * points[i].Y, 2)};{Math.Round(W[2] - C * 1, 2)}]^-1 \n");
                             W[0] = Math.Round(W[0] - C * points[i].X, 2);
                             W[1] = Math.Round(W[1] - C * points[i].Y, 2);
@@ -617,7 +644,7 @@ namespace ExamRecog
                     }
 
                 }
-                if(flag) AddTextToWord(para, $"И так далее пока прохождение всех точек не приведет ни к наказанию, ни к поощрению перцептрона. \n");
+                if (flag) AddTextToWord(para, $"И так далее пока прохождение всех точек не приведет ни к наказанию, ни к поощрению перцептрона. \n");
             }
 
             SaveDoc();
