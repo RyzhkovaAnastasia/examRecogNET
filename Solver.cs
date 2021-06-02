@@ -535,7 +535,7 @@ namespace ExamRecog
                         }
                         else if (points[i].PointClass == @class && res <= 0)
                         {
-                            C = Math.Ceiling(Convert.ToDouble(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
+                            C = Math.Ceiling(Convert.ToDouble(Math.Abs(res) / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, должно быть > 0, поэтому перцептрон поощряем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) + C*X{i + 1}\n " +
                                $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
@@ -547,7 +547,7 @@ namespace ExamRecog
                         }
                         else if (points[i].PointClass != @class && res >= 0)
                         {
-                            C = Math.Ceiling(Convert.ToDouble(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
+                            C = Math.Ceiling(Convert.ToDouble(Math.Abs(res) / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)));
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) - C*X{i + 1} \n" +
                                 $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
@@ -614,7 +614,7 @@ namespace ExamRecog
                         }
                         else if (points[i].PointClass == @class && res <= 0)
                         {
-                            C = Math.Round(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1), 2);
+                            C = Math.Round(Math.Abs(res) / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1), 2);
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} < 0, должно быть > 0, поэтому перцептрон поощряем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) + C*X{i + 1}\n " +
                                $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
@@ -626,7 +626,7 @@ namespace ExamRecog
                         }
                         else if (points[i].PointClass != @class && res >= 0)
                         {
-                            C = Math.Round(res / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1), 2);
+                            C = Math.Round(Math.Abs(res) / (points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1), 2);
                             if (C == 0) C = 1;
                             AddTextToWord(para, $"d{@class + 1}(X{i + 1})={res} > 0, должно быть < 0, поэтому перцептрон наказываем. W{@class + 1}({step}) = W{@class + 1}({step - 1}) - C*X{i + 1} \n" +
                                 $"Вычисляем С: С = W{@class + 1}*X{i + 1} / (X{i + 1} * X`{i + 1}) ={res} / {(points[i].X * points[i].X + points[i].Y * points[i].Y + 1 * 1)} = {C}\n" +
